@@ -1,0 +1,145 @@
+<PlusConfiguration version="2.3">
+
+  <DataCollection StartupDelaySec="1.0" >
+    <DeviceSet 
+      Name="Telemed L12 50mm Ascension - Calibration using pointer"
+      Description="EM sensors: 1 Probe, 2 Reference, 3 Needle" 
+    />
+
+    <Device
+      Id="TrackerDevice" 
+      Type="Ascension3DG" 
+      AcquisitionRate="50" 
+      LocalTimeOffsetSec="0.03" 
+      FilterAcWideNotch="1"
+      ToolReferenceFrame="Tracker">
+      <DataSources>
+        <DataSource Type="Tool" Id="Probe" BufferSize="500" PortName="0" AveragedItemsForFiltering="20" />
+        <DataSource Type="Tool" Id="Reference" BufferSize="500" PortName="1" AveragedItemsForFiltering="20" />
+        <DataSource Type="Tool" Id="Needle" BufferSize="500" PortName="2" AveragedItemsForFiltering="20" />
+      </DataSources>
+      <OutputChannels>
+        <OutputChannel Id="TrackerStream" >
+          <DataSource Id="Probe"/>
+          <DataSource Id="Reference"/>
+          <DataSource Id="Needle"/>
+        </OutputChannel>
+      </OutputChannels>
+    </Device>
+
+    <Device
+      Id="VideoDevice"
+      Type="TelemedVideo"
+      DepthMm="50">
+      <DataSources>
+        <DataSource Type="Video" Id="Video" PortUsImageOrientation="UF" />
+      </DataSources>
+      <OutputChannels>
+        <OutputChannel Id="UltrasoundStream" VideoDataSourceId="Video" />
+      </OutputChannels>
+    </Device>
+
+    <Device
+      Id="WebcamDevice" 
+      Type="MmfVideo" 
+      FrameSize="640 480"
+      VideoFormat="YUY2"
+      CaptureDeviceId="0" >
+      <DataSources>
+        <DataSource Type="Video" Id="Video" PortUsImageOrientation="MF" ImageType="BRIGHTNESS" />
+      </DataSources>      
+      <OutputChannels>
+        <OutputChannel Id="WebcamStream" VideoDataSourceId="Video" />
+      </OutputChannels>
+    </Device>
+
+    <Device 
+      Id="TrackedUltrasoundDevice" 
+      Type="VirtualMixer" >
+      <InputChannels>
+        <InputChannel Id="TrackerStream" />
+        <InputChannel Id="UltrasoundStream" />
+      </InputChannels>
+      <OutputChannels>
+        <OutputChannel Id="TrackedUltrasoundStream"/>
+      </OutputChannels>
+    </Device>
+
+  </DataCollection>
+
+  <PlusOpenIGTLinkServer
+    MaxNumberOfIgtlMessagesToSend="1"
+    MaxTimeSpentWithProcessingMs="50"
+    ListeningPort="18944"
+    SendValidTransformsOnly="true"
+    OutputChannelId="TrackedUltrasoundStream" >
+    <DefaultClientInfo>
+      <MessageTypes>
+        <Message Type="IMAGE" />
+        <Message Type="TRANSFORM" />
+      </MessageTypes>
+      <TransformNames>
+        <Transform Name="NeedleToProbe" />
+      </TransformNames>
+      <ImageNames>
+        <Image Name="Ultrasound" EmbeddedTransformToFrame="Ultrasound" />
+      </ImageNames>
+    </DefaultClientInfo>
+  </PlusOpenIGTLinkServer>
+
+  <PlusOpenIGTLinkServer
+    MaxNumberOfIgtlMessagesToSend="1"
+    MaxTimeSpentWithProcessingMs="50"
+    ListeningPort="18945"
+    SendValidTransformsOnly="true"
+    OutputChannelId="WebcamStream">
+    <DefaultClientInfo>
+      <MessageTypes>
+        <Message Type="IMAGE" />
+      </MessageTypes>
+      <ImageNames>
+        <Image Name="Webcam" EmbeddedTransformToFrame="Webcam" />
+      </ImageNames>
+    </DefaultClientInfo>
+  </PlusOpenIGTLinkServer>
+
+  <CoordinateDefinitions>
+
+  </CoordinateDefinitions> 
+  
+  <fCal
+    PhantomModelId="PhantomModel"
+    ReconstructedVolumeId="Volume"
+    TransducerModelId="ProbeModel"
+    StylusModelId="StylusModel"
+    ImageDisplayableObjectId="LiveImage"
+    NumberOfCalibrationImagesToAcquire="200"
+    NumberOfValidationImagesToAcquire="100"
+    NumberOfStylusCalibrationPointsToAcquire="200"
+    RecordingIntervalMs="100"
+    MaxTimeSpentWithProcessingMs="70"
+    ImageCoordinateFrame="Ultrasound"
+    ProbeCoordinateFrame="Probe"
+    ReferenceCoordinateFrame="Reference"
+    TransducerOriginCoordinateFrame="TransducerOrigin"
+    TransducerOriginPixelCoordinateFrame="TransducerOriginPixel"
+    TemporalCalibrationDurationSec="10"
+    FixedChannelId="UltrasoundStream" 
+    FixedSourceId="Video"
+    MovingChannelId="TrackerStream"
+    MovingSourceId="ProbeToTracker"
+    DefaultSelectedChannelId="TrackedVideoStream" 
+    FreeHandStartupDelaySec="3" />
+
+  <vtkPlusPivotCalibrationAlgo
+    ObjectMarkerCoordinateFrame="Stylus"
+    ReferenceCoordinateFrame="Reference"
+    ObjectPivotPointCoordinateFrame="StylusTip" />
+  
+  <vtkTemporalCalibrationAlgo
+    ClipRectangleOrigin="27 27" 
+    ClipRectangleSize="766 562" />
+
+
+  
+</PlusConfiguration>

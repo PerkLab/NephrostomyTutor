@@ -1,0 +1,73 @@
+<PlusConfiguration version="2.1">
+  <DataCollection StartupDelaySec="1.0" >
+
+    <DeviceSet
+      Name="PlusServer: Tobii eye tracking"
+      Description="Broadcasting acquired gaze tracking through OpenIGTLink"/>
+
+    <Device
+      Id="TrackerDevice"
+      Type="TobiiInteraction"
+      ToolReferenceFrame="Screen"
+      ScreenSize="1920 1080"
+      NoFocusName="Not looking at anything"
+      >
+      <DataSources>
+        <DataSource Type="Tool" Id="Gaze" PortName="Gaze"/>
+        <DataSource Type="Tool" Id="LeftGazeOrigin" PortName="LeftGazeOrigin"/>
+        <DataSource Type="Tool" Id="RightGazeOrigin" PortName="RightGazeOrigin"/>
+        <DataSource Type="Tool" Id="Head" PortName="Head"/>
+        <DataSource Type="FieldData" Id="Interactor"/>
+        <DataSource Type="FieldData" Id="Presence"/>
+      </DataSources>
+
+      <Interactors>
+        <Interactor Name="WorkflowWidget" Origin="0.0 0.0" Size="0.3 1.0" Z="2.0" SizeMode="RELATIVE"/>
+        <Interactor Name="3DModels" Origin="0.3 0.0" Size="0.4 1.0" Z="1.0" SizeMode="RELATIVE"/>
+        <Interactor Name="Ultrasound" Origin="0.70 0.0" Size="0.3 0.5" Z="1.0" SizeMode="RELATIVE"/>
+        <Interactor Name="ColorVideo" Origin="0.70 0.5" Size="0.3 0.5" Z="3.0" SizeMode="RELATIVE"/>
+        <Interactor Name="WholeScreen" Origin="0.0 0" Size="1.0 1.0" Z="0.0" SizeMode="RELATIVE"/>
+      </Interactors>
+
+      <OutputChannels>
+        <OutputChannel Id="TrackerStream">
+          <DataSource Id="Gaze"/>
+          <DataSource Id="LeftGazeOrigin"/>
+          <DataSource Id="RightGazeOrigin"/>
+          <DataSource Id="Head"/>
+          <DataSource Id="Interactor"/>
+          <DataSource Id="Presence"/>
+        </OutputChannel>
+        <OutputChannel Id="InteractorStream">
+          <DataSource Id="Interactor"/>
+          <DataSource Id="Presence"/>
+        </OutputChannel>
+      </OutputChannels>
+    </Device>
+
+  </DataCollection>
+
+  <PlusOpenIGTLinkServer
+    MaxNumberOfIgtlMessagesToSend="1"
+    MaxTimeSpentWithProcessingMs="50"
+    ListeningPort="18944"
+    SendValidTransformsOnly="true"
+    OutputChannelId="TrackerStream" >
+    <DefaultClientInfo>
+      <MessageTypes>
+        <Message Type="TRANSFORM" />
+        <Message Type="STRING" />
+      </MessageTypes>
+      <TransformNames>
+        <Transform Name="GazeToScreen" />
+        <Transform Name="LeftGazeOriginToScreen" />
+        <Transform Name="RightGazeOriginToScreen" />
+        <Transform Name="HeadToScreen" />
+      </TransformNames>
+      <StringNames>
+        <String Name="Interactor" />
+        <String Name="Presence" />
+      </StringNames>
+    </DefaultClientInfo>
+  </PlusOpenIGTLinkServer>
+</PlusConfiguration>

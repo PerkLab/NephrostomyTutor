@@ -1,0 +1,118 @@
+<PlusConfiguration version="2.0">
+
+    <DataCollection StartupDelaySec="1.0">
+        <DeviceSet Name="Telemed L12 60mm Ascension and Media Foundation video capture device - color" Description="EM sensors: 1 Probe, 2 Reference, 3 Needle. Broadcasting acquired video through OpenIGTLink" />
+        
+        <Device Id="WebcamDevice" Type="MmfVideo" FrameSize="640 480" VideoFormat="YUY2" CaptureDeviceId="1">
+            <DataSources>
+                <DataSource Type="Video" Id="Webcam" PortUsImageOrientation="UN" ImageType="RGB_COLOR" />
+            </DataSources>
+            <OutputChannels>
+                <OutputChannel Id="WebcamStream" VideoDataSourceId="Webcam" />
+            </OutputChannels>
+        </Device>
+        
+        <Device Id="WebcamCaptureDevice" Type="VirtualDiscCapture" BaseFilename="WebcamRecording.mha" EnableCapturingOnStart="FALSE">
+            <InputChannels>
+                <InputChannel Id="WebcamStream" />
+            </InputChannels>
+        </Device>
+
+        <Device Id="TrackerDevice" Type="Ascension3DG" AcquisitionRate="50" LocalTimeOffsetSec="0.0" FilterAcWideNotch="1" FilterAlpha="1" FilterDcAdaptive="1" ToolReferenceFrame="Tracker">
+            <DataSources>
+                <DataSource Type="Tool" Id="Probe" BufferSize="500" PortName="0" />
+                <DataSource Type="Tool" Id="Reference" BufferSize="500" PortName="1" />
+                <DataSource Type="Tool" Id="Needle" BufferSize="500" PortName="2" />
+            </DataSources>
+            <OutputChannels>
+                <OutputChannel Id="TrackerStream">
+                    <DataSource Id="Probe" />
+                    <DataSource Id="Reference" />
+                    <DataSource Id="Needle" />
+                </OutputChannel>
+            </OutputChannels>
+        </Device>
+
+        <Device Id="VideoDevice" Type="TelemedVideo" DepthMm="60">
+            <DataSources>
+                <DataSource Type="Video" Id="Video" PortUsImageOrientation="UF" />
+            </DataSources>
+            <OutputChannels>
+                <OutputChannel Id="VideoStream" VideoDataSourceId="Video" />
+            </OutputChannels>
+        </Device>
+
+        <Device Id="TrackedVideoDevice" Type="VirtualMixer">
+            <InputChannels>
+                <InputChannel Id="TrackerStream" />
+                <InputChannel Id="VideoStream" />
+            </InputChannels>
+            <OutputChannels>
+                <OutputChannel Id="TrackedVideoStream" />
+            </OutputChannels>
+        </Device>
+
+        <Device Id="USCaptureDevice" Type="VirtualDiscCapture" BaseFilename="Recording.mhd" EnableCapturingOnStart="FALSE" RequestedFrameRate="15">
+            <InputChannels>
+                <InputChannel Id="TrackedVideoStream" />
+            </InputChannels>
+        </Device>
+
+        <Device Id="VolumeReconstructorDevice" Type="VirtualVolumeReconstructor" OutputVolDeviceName="Volume_Reference" EnableReconstruction="FALSE">
+            <InputChannels>
+                <InputChannel Id="TrackedVideoStream" />
+            </InputChannels>
+            <VolumeReconstruction ImageCoordinateFrame="Image" ReferenceCoordinateFrame="Reference" CompoundingMode="MEAN" Interpolation="LINEAR" Optimization="FULL" NumberOfThreads="2" ClipRectangleOrigin="0 0" ClipRectangleSize="820 616" PixelRejectionThreshold="1" OutputSpacing="0.5 0.5 0.5" FillHoles="ON">
+                <HoleFilling>
+                    <HoleFillingElement Type="GAUSSIAN" Size="5" Stdev="0.6667" MinimumKnownVoxelsRatio="0.50001" />
+                    <HoleFillingElement Type="STICK" StickLengthLimit="9" NumberOfSticksToUse="1" />
+                </HoleFilling>
+            </VolumeReconstruction>
+        </Device>
+    </DataCollection>
+
+    <PlusOpenIGTLinkServer MaxNumberOfIgtlMessagesToSend="1" MaxTimeSpentWithProcessingMs="50" ListeningPort="18945" SendValidTransformsOnly="true" OutputChannelId="WebcamStream">
+        <DefaultClientInfo>
+            <MessageTypes>
+                <Message Type="IMAGE" />
+            </MessageTypes>
+            <ImageNames>
+                <Image Name="Webcam" EmbeddedTransformToFrame="Reference" />
+            </ImageNames>
+        </DefaultClientInfo>
+    </PlusOpenIGTLinkServer>
+
+    <PlusOpenIGTLinkServer MaxNumberOfIgtlMessagesToSend="1" MaxTimeSpentWithProcessingMs="50" ListeningPort="18944" SendValidTransformsOnly="true" OutputChannelId="TrackedVideoStream">
+        <DefaultClientInfo>
+            <MessageTypes>
+                <Message Type="IMAGE" />
+                <Message Type="TRANSFORM" />
+            </MessageTypes>
+            <TransformNames>
+                <Transform Name="ProbeToReference" />
+                <Transform Name="NeedleToReference" />
+                <Transform Name="ImageToProbe" />
+            </TransformNames>
+            <ImageNames>
+                <Image Name="Image" EmbeddedTransformToFrame="Reference" />
+            </ImageNames>
+        </DefaultClientInfo>
+    </PlusOpenIGTLinkServer>
+
+    <CoordinateDefinitions>
+        <!-- Probe calibration using needle-based method-->
+        <Transform From="Image" To="Probe" Matrix=" 
+        	-0.00139143 0.118606 -0.00167087 50.8838
+        	-0.118602 -0.00136388 0.00195228 43.5529
+        	0.00193274 0.00169343 0.118598 20.3983
+        	0 0 0 1" 
+        	Date="2015.10.27 14:06:18" />
+
+        <Transform From="Webcam" To="Reference" Matrix="
+        	0.2 0.0 0.0 0.0
+        	0.0 0.2 0.0 0.0
+        	0.0 0.0 0.2 0.0
+        	0 0 0 1" />
+    </CoordinateDefinitions>
+
+</PlusConfiguration>
