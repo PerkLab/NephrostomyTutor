@@ -57,7 +57,7 @@
     
 	<Device
       Id="CaptureDevice"
-      Type="VirtualDiscCapture"
+      Type="VirtualCapture"
       BaseFilename="Recording.mha"
       EnableCapturingOnStart="FALSE" >
       <InputChannels>

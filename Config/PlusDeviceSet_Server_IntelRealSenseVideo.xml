@@ -15,7 +15,7 @@
         <DataSource
           Type="Video"
           Id="VideoRGB"
-          DeviceSerialNumber="025522060972"
+          DeviceSerialNumber="217222065147"
           FrameType="RGB"
           FrameSize="640 480"
           FrameRate="15"
@@ -25,7 +25,7 @@
         <DataSource
           Type="Video"
           Id="VideoDEPTH"
-          DeviceSerialNumber="025522060972"
+          DeviceSerialNumber="217222065147"
           FrameType="DEPTH"
           FrameSize="640 480"
           FrameRate="15"
@@ -37,7 +37,7 @@
         <DataSource
           Type="Video"
           Id="Video1RGB"
-          DeviceSerialNumber="025522060168"
+          DeviceSerialNumber="220222064007"
           FrameType="RGB"
           FrameSize="640 480"
           FrameRate="15"
@@ -47,7 +47,7 @@
         <DataSource
           Type="Video"
           Id="Video1DEPTH"
-          DeviceSerialNumber="025522060168"
+          DeviceSerialNumber="220222064007"
           FrameType="DEPTH"
           FrameSize="640 480"
           FrameRate="15"

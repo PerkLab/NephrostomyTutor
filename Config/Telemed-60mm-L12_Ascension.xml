@@ -15,14 +15,14 @@
       ToolReferenceFrame="Tracker">
       <DataSources>
         <DataSource Type="Tool" Id="Probe" BufferSize="500" PortName="0" AveragedItemsForFiltering="20" />
-        <DataSource Type="Tool" Id="Reference" BufferSize="500" PortName="1" AveragedItemsForFiltering="20" />
-        <DataSource Type="Tool" Id="Needle" BufferSize="500" PortName="2" AveragedItemsForFiltering="20" />
+        <DataSource Type="Tool" Id="Needle" BufferSize="500" PortName="1" AveragedItemsForFiltering="20" />
+        <DataSource Type="Tool" Id="Reference" BufferSize="500" PortName="2" AveragedItemsForFiltering="20" />
       </DataSources>
       <OutputChannels>
         <OutputChannel Id="TrackerStream" >
           <DataSource Id="Probe"/>
-          <DataSource Id="Reference"/>
           <DataSource Id="Needle"/>
+	      <DataSource Id="Reference"/>
         </OutputChannel>
       </OutputChannels>
     </Device>
@@ -30,12 +30,12 @@
     <Device
       Id="VideoDevice"
       Type="TelemedVideo"
-      DepthMm="60">
+      DepthMm="110">
       <DataSources>
         <DataSource
           Type="Video"
           Id="Video"
-          PortUsImageOrientation="UF"
+          PortUsImageOrientation="UN"
           />
       </DataSources>
       <OutputChannels>
@@ -57,7 +57,7 @@
 
     <Device
       Id="CaptureDevice"
-      Type="VirtualDiscCapture"
+      Type="VirtualCapture"
       BaseFilename="Recording.mhd"
       EnableCapturingOnStart="FALSE"
       RequestedFrameRate="15" >
@@ -104,9 +104,10 @@
       <TransformNames>
         <Transform Name="ProbeToReference" />
         <Transform Name="NeedleToReference" />
+        <Transform Name="ImageToProbe" />
       </TransformNames>
       <ImageNames>
-        <Image Name="Image" EmbeddedTransformToFrame="Reference" />
+        <Image Name="Image" EmbeddedTransformToFrame="Image" />
       </ImageNames>
     </DefaultClientInfo>
   </PlusOpenIGTLinkServer>
@@ -116,12 +117,13 @@
     <!-- Probe calibration using needle-based method-->
     <Transform From="Image" To="Probe"
       Matrix="
-        -0.000346624 0.118304 0.000544461 49.6661 
-        -0.118302 -0.000342533 -0.000887723 43.0251 
-        -0.000886133 -0.000547045 0.118302 21.4761 
-        0 0 0 1 
+		-0.00185924 -0.176288 -0.00697099 177.805 
+		-0.0366905 0.00710989 -0.174772 40.9667 
+		0.177069 -0.000377792 -0.0362878 -29.318 
+		0 0 0 1 
          "
        Date="2015.10.27 14:06:18" /> 
+	   
 
   </CoordinateDefinitions> 
 

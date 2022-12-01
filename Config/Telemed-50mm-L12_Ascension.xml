@@ -17,14 +17,14 @@
       ToolReferenceFrame="Tracker">
       <DataSources>
         <DataSource Type="Tool" Id="Probe" BufferSize="500" PortName="0" />
-        <DataSource Type="Tool" Id="Reference" BufferSize="500" PortName="1" />
-        <DataSource Type="Tool" Id="Needle" BufferSize="500" PortName="2" />
+        <DataSource Type="Tool" Id="Needle" BufferSize="500" PortName="1" />
+        <DataSource Type="Tool" Id="Reference" BufferSize="500" PortName="2" />
       </DataSources>
       <OutputChannels>
         <OutputChannel Id="TrackerStream" >
           <DataSource Id="Probe"/>
-          <DataSource Id="Reference"/>
           <DataSource Id="Needle"/>
+		  <DataSource Id="Reference"/>
         </OutputChannel>
       </OutputChannels>
     </Device>
@@ -32,7 +32,7 @@
     <Device
       Id="VideoDevice"
       Type="TelemedVideo"
-      DepthMm="50">
+      DepthMm="60">
       <DataSources>
         <DataSource Type="Video" Id="Video" PortUsImageOrientation="UF" />
       </DataSources>
@@ -93,10 +93,10 @@
     <!-- Probe calibration using needle-based method-->
 	<Transform From="Image" To="Probe"
       Matrix="
-	  -0.000357746   0.100473   0.00266721    78.4994 
-      -0.000055759  -0.00266742 0.100474      26.4237 
-       0.100508      0.00035614 0.00006523   -40.3347 
-       0 0 0 1 
+		1 0 0 0 
+		0 1 0 0 
+		0 0 1 0 
+		0 0 0 1
 	   "
        Date="2017.05.28 14:06:18" /> 
 

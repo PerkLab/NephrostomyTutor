@@ -5,7 +5,7 @@ from functools import partial
 import pandas
 from Guidelet import GuideletLoadable, GuideletLogic, GuideletTest, GuideletWidget
 from Guidelet import Guidelet
-import PythonMetricsCalculator
+#import PythonMetricsCalculator
 import logging
 import time
 import operator
@@ -68,10 +68,10 @@ class NephrostomyTutorLogic(GuideletLogic):
                    'TestMode' : 'False',
                    'RecordingFilenamePrefix' : 'NephrostomyTutorRec-',
                    'UltraSoundBrightnessControl' : 'Slider',
-                   'SavedScenesDirectory': os.path.join( moduleDir, 'SavedScenes' ),
+                   #'SavedScenesDirectory': os.path.join( moduleDir, 'SavedScenes' ),
                    'ProcedureLayout': Guidelet.VIEW_ULTRASOUND_CAM_3D,
                    'ResultsLayout': Guidelet.VIEW_ULTRASOUND_CAM_3D, #overwrites the default setting param of base
-           'PlusWebcamServerHostNamePort': 'localhost:18945',
+                   'PlusWebcamServerHostNamePort': 'localhost:18945',
                    }
 
     self.updateSettings(settingsList, 'Default')
@@ -82,7 +82,7 @@ class NephrostomyTutorLogic(GuideletLogic):
     self.updateUserPreferencesFromSettings( settingsList, 'Default' ) # Copy values from the default configuration
     moduleDir = os.path.dirname(slicer.modules.nephrostomytutor.path)
 
-    settingsList[ 'SavedScenesDirectory' ] = os.path.join( moduleDir, 'SavedScenes' )
+    #settingsList[ 'SavedScenesDirectory' ] = os.path.join( moduleDir, 'SavedScenes' )
     settingsList[ 'DisplayNeedleModel' ] = 'False'
     settingsList[ 'ProcedureLayout' ] = Guidelet.VIEW_ULTRASOUND
     settingsList[ 'ResultsLayout' ] = Guidelet.VIEW_ULTRASOUND_3D
@@ -96,7 +96,7 @@ class NephrostomyTutorLogic(GuideletLogic):
     self.updateUserPreferencesFromSettings(settingsList, 'Default')  # Copy values from the default configuration
     moduleDir = os.path.dirname(slicer.modules.nephrostomytutor.path)
 
-    settingsList['SavedScenesDirectory'] = os.path.join(moduleDir, 'SavedScenes')
+    #settingsList['SavedScenesDirectory'] = os.path.join(moduleDir, 'SavedScenes')
     settingsList[ 'ProcedureLayout' ] = Guidelet.VIEW_ULTRASOUND_CAM_3D
     settingsList[ 'ResultsLayout' ] = Guidelet.VIEW_ULTRASOUND_3D
     settingsList['UltrasoundBrightnessControl'] = 'Buttons'
@@ -109,7 +109,7 @@ class NephrostomyTutorLogic(GuideletLogic):
     self.updateUserPreferencesFromSettings(settingsList, 'Default')  # Copy values from the default configuration
     moduleDir = os.path.dirname(slicer.modules.nephrostomytutor.path)
 
-    settingsList['SavedScenesDirectory'] = os.path.join(moduleDir, 'SavedScenes')
+    #settingsList['SavedScenesDirectory'] = os.path.join(moduleDir, 'SavedScenes')
     settingsList[ 'ProcedureLayout' ] = Guidelet.VIEW_ULTRASOUND_CAM_3D
     settingsList[ 'ResultsLayout' ] = Guidelet.VIEW_ULTRASOUND_3D
     settingsList['UltrasoundBrightnessControl'] = 'Dual'
@@ -196,7 +196,7 @@ class NephrostomyTutorGuidelet(Guidelet):
     self.mainWindow.setWindowTitle('NephrostomyTutor')
     self.mainWindow.windowIcon = qt.QIcon(moduleDirectoryPath + '/Resources/Icons/NephrostomyTutor.png')
 
-    self.setupScene()
+    #was here
 
     self.navigationView = self.VIEW_ULTRASOUND_3D
 
@@ -207,12 +207,20 @@ class NephrostomyTutorGuidelet(Guidelet):
     self.ultrasoundCollapsibleButton.setProperty('collapsed', False)
     self.ultrasoundCollapsibleButton.text = "Procedure"
     moduleDir = os.path.dirname(slicer.modules.nephrostomytutor.path)
-    sceneSaveDirectory = os.path.join( moduleDir, 'SavedScenes' )
+    sceneSaveDirectory = self.logic.getParameterNode().GetParameter('SavedScenesDirectory')
+    #userSettings = slicer.app.userSettings()
+    #sceneSaveDirectory = userSettings.value('SavedScenesDirectory')
     self.logic.updateSettings({'SavedScenesDirectory': sceneSaveDirectory}, self.configurationName)
     node = self.logic.getParameterNode()
     self.logic.updateParameterNodeFromUserPreferences(node, {'SavedScenesDirectory': sceneSaveDirectory})
     self.createLoginPage()
     self.sliceletDockWidget.setWidget(self.loginPanel)
+    self.setupScene()
+
+    if not os.path.exists(os.path.join(moduleDir,'Resources/NephrostomyUserDatabase.csv')):
+      self.userDataBase = pandas.DataFrame(columns=['ID','First_name','Last_name','email_address','specialty',"specialty_key",'education'])
+    else:
+      self.userDataBase = pandas.read_csv(os.path.join(moduleDir,'Resources/NephrostomyUserDatabase.csv'))
 
   def createLoginPage(self):
     self.loginPanel = qt.QFrame()
@@ -226,29 +234,100 @@ class NephrostomyTutorGuidelet(Guidelet):
 
     self.spacer = qt.QLabel('\n\n\n\n\n\n')
     self.loginButtonLayout.addWidget(self.spacer)
-    self.userIDLineEdit = qt.QLineEdit('User ID')
-    self.loginButtonLayout.addWidget(self.userIDLineEdit)
+    '''self.firstNameLineEdit = qt.QLineEdit('First Name')
+    self.lastNameLineEdit = qt.QLineEdit('Last Name')
+    self.loginButtonLayout.addWidget(self.firstNameLineEdit)
+    self.loginButtonLayout.addWidget(self.lastNameLineEdit)'''
+    self.emailAddressLineEdit = qt.QLineEdit("Email address")
+    self.loginButtonLayout.addWidget(self.emailAddressLineEdit)
 
     self.loginPushButton = qt.QPushButton('Login')
     self.loginButtonLayout.addWidget(self.loginPushButton)
-    self.loginPushButton.connect('clicked()',self.onLoginClicked)
+    self.loginPushButton.connect('clicked()', self.onLoginClicked)
+
+    self.createNewUserPushButton = qt.QPushButton('Create New User')
+    self.loginButtonLayout.addWidget(self.createNewUserPushButton)
+    self.createNewUserPushButton.connect('clicked()', self.onCreateNewUserClicked)
+
+    self.userFoundLabel = qt.QLabel('')
+    self.loginButtonLayout.addWidget(self.userFoundLabel)
 
     self.loginPanelLayout.addLayout(self.loginButtonLayout)
 
+    self.loginPanelLayout.addLayout(self.loginButtonLayout)
+
+  def onCreateNewUserClicked(self):
+    self.createUserLayout = qt.QVBoxLayout()
+    self.createUserLayout.setContentsMargins(12, 4, 4, 4)
+    self.createUserLayout.setSpacing(4)
+
+    self.createUserButtonLayout = qt.QFormLayout()
+    self.createUserButtonLayout.setContentsMargins(12, 4, 4, 4)
+    self.createUserButtonLayout.setSpacing(4)
+
+    self.enterFirstNameLineEdit = qt.QLineEdit()
+    self.enterFirstNameLineEdit.setText("First Name")
+    self.createUserButtonLayout.addRow(self.enterFirstNameLineEdit)
+
+    self.enterLastNameLineEdit = qt.QLineEdit()
+    self.enterLastNameLineEdit.setText("Last Name")
+    self.createUserButtonLayout.addRow(self.enterLastNameLineEdit)
+
+    self.enterEmailAddressLineEdit = qt.QLineEdit()
+    self.enterEmailAddressLineEdit.setText("Email Address")
+    self.createUserButtonLayout.addRow(self.enterEmailAddressLineEdit)
+
+    self.enterSpecialtyLineEdit = qt.QLineEdit()
+    self.enterSpecialtyLineEdit.setText("Specialty")
+    self.createUserButtonLayout.addRow(self.enterSpecialtyLineEdit)
+
+    self.educationLabel = qt.QLabel()
+    self.educationLabel.setText("What is your level of education")
+    self.createUserButtonLayout.addRow(self.educationLabel)
+
+    self.educationComboBox = qt.QComboBox()
+    self.educationComboBox.addItems(["Select Education Level", "Medical student", "Resident","Attending","Other"])
+    self.createUserButtonLayout.addRow(self.educationComboBox)
+
+    self.missingInfoLabel = qt.QLabel()
+    self.missingInfoLabel.setText("")
+    self.createUserButtonLayout.addRow(self.missingInfoLabel)
+
+    self.submitUserButton = qt.QPushButton("Submit")
+    self.submitUserButtonBox = qt.QDialogButtonBox()
+    self.submitUserButtonBox.addButton(self.submitUserButton, 2)
+    self.submitUserButton.setMaximumWidth(500)
+    self.createUserButtonLayout.addRow(self.submitUserButtonBox)
+    self.createUserLayout.addLayout(self.createUserButtonLayout)
+
+    self.createUserFrame.setLayout(self.createUserLayout)
+
+    self.setupCreateUserConnections()
+
+    self.createUserWidget.show()
+
   def onLoginClicked(self):
-    self.sliceletDockWidget.setWindowTitle('User ID: ' + self.userIDLineEdit.text)
+
     node = self.logic.getParameterNode()
-    #sceneSaveDirectory = node.GetParameter('SavedScenesDirectory')
+    sceneSaveDirectory = node.GetParameter('SavedScenesDirectory')
     moduleDir = os.path.dirname(slicer.modules.nephrostomytutor.path)
 
-    sceneSaveDirectory = os.path.join(moduleDir, 'SavedScenes')
-    if self.userIDLineEdit.text != '' and self.userIDLineEdit.text != 'User ID':
+    #sceneSaveDirectory = os.path.join(moduleDir, 'SavedScenes')
+    email_address,servername = self.emailAddressLineEdit.text.split("@")
+    email_address = email_address.lower() + "@" + servername.lower()
+    self.userEntry = self.userDataBase.loc[self.userDataBase["email_address"] == email_address]
+    if not self.userEntry.empty:
+      self.userID = self.userEntry["ID"][self.userEntry.index[0]]
+      self.sliceletDockWidget.setWindowTitle('User ID: ' + self.userID)
       self.logic.updateSettings({'SavedScenesDirectory': sceneSaveDirectory}, self.configurationName)
       self.logic.updateParameterNodeFromUserPreferences(node, {'SavedScenesDirectory': sceneSaveDirectory})
       self.sliceletDockWidget.setWidget(self.sliceletPanel)
+      self.userFoundLabel.setText("")
     else:
+      self.userFoundLabel.setText(
+        "No user found by email: {}".format(self.emailAddressLineEdit.text))
       moduleDir = os.path.dirname(slicer.modules.nephrostomytutor.path)
-      sceneSaveDirectory = os.path.join(moduleDir, 'SavedScenes')
+      sceneSaveDirectory = self.logic.getParameterNode.GetParameter('SavedScenesDirectory')
       self.logic.updateSettings({'SavedScenesDirectory': sceneSaveDirectory}, self.configurationName)
       self.logic.updateParameterNodeFromUserPreferences(node, {'SavedScenesDirectory': sceneSaveDirectory})
 
@@ -352,10 +431,11 @@ class NephrostomyTutorGuidelet(Guidelet):
       slicer.mrmlScene.AddNode(self.probeToReference)
 
     try:
-      self.probeModelToProbe = slicer.util.getNode('ProbeModelToReference')
+      self.probeModelToProbe = slicer.util.getNode('ProbeModelToProbe')
     except slicer.util.MRMLNodeNotFoundException:
-      probeToReferenceFilePath = os.path.join(moduleDir, 'Resources', 'ProbeModelToProbe_L12.h5')
+      probeToReferenceFilePath = os.path.join(moduleDir, 'Resources', 'probeModelToProbe.h5')
       self.probeModelToProbe = slicer.util.loadTransform(probeToReferenceFilePath)
+      self.probeModelToProbe.SetName("ProbeModelToProbe")
 
     try:
       self.needleToReference = slicer.util.getNode('NeedleToReference')
@@ -371,14 +451,14 @@ class NephrostomyTutorGuidelet(Guidelet):
       self.needleTipToNeedle = slicer.util.loadTransform(needleTiptoNeedleFilePath)
 
     #for pre-recorded procedures only
-    try:
+    '''try:
       self.vesselToModel = slicer.util.getNode('VesselToModel')
     except slicer.util.MRMLNodeNotFoundException:
       try:
         vesselToModelPath = os.path.join(moduleDir, 'Resources', 'VesselToModel.h5')
         self.vesselToModel = slicer.util.loadTransform(vesselToModelPath)
       except RuntimeError:
-        logging.info("Could not read vessel to model transform")
+        logging.info("Could not read vessel to model transform")'''
 
     try:
       self.imageToProbe = slicer.util.getNode('ImageToProbe')
@@ -415,10 +495,19 @@ class NephrostomyTutorGuidelet(Guidelet):
       self.usProbeModel = slicer.util.getNode('UsProbe')
     except slicer.util.MRMLNodeNotFoundException:
     #if not self.usProbeModel:
-      modelFilePath = os.path.join(moduleDir, 'Resources', 'Telemed_L12.stl')
+      modelFilePath = os.path.join(moduleDir, 'Resources', 'USProbe.stl')
       self.usProbeModel = slicer.util.loadModel(modelFilePath)
       self.usProbeModel.SetName('UsProbe')
       self.usProbeModel.GetDisplayNode().SetColor(0.9, 0.9, 0.9)
+      
+    try:
+      self.calyxModel = slicer.util.getNode('Calyx')
+    except slicer.util.MRMLNodeNotFoundException:
+    #if not self.usProbeModel:
+      #modelFilePath = os.path.join(moduleDir, 'Resources', 'Segmentation_Left_Calyx_LG.stl')
+      modelFilePath = os.path.join(moduleDir, 'Resources', 'Calyces.stl')
+      self.calyxModel = slicer.util.loadModel(modelFilePath)
+      self.calyxModel.SetName('Calyx')
 
     try:
       self.needleModel = slicer.util.getNode('NeedleModel')
@@ -448,8 +537,8 @@ class NephrostomyTutorGuidelet(Guidelet):
     self.imageToImage.SetAndObserveTransformNodeID(self.imageToProbe.GetID())
     self.needleModel.SetAndObserveTransformNodeID(self.needleTipToNeedle.GetID())
     if sys.version.startswith('3'):
-      self.usProbeModel.SetAndObserveTransformNodeID(self.probeTransform.GetID())
-      self.probeTransform.SetAndObserveTransformNodeID(self.probeModelToProbe.GetID())
+      # self.usProbeModel.SetAndObserveTransformNodeID(self.probeTransform.GetID())
+      self.usProbeModel.SetAndObserveTransformNodeID(self.probeModelToProbe.GetID())
     else:
       self.usProbeModel.SetAndObserveTransformNodeID(self.probeModelToProbe.GetID())
     #self.imageImage.SetAndObserveTransformNodeID(self.imageToProbe.GetID())
@@ -506,6 +595,7 @@ class NephrostomyTutorGuidelet(Guidelet):
       self.webcam1RGB = slicer.vtkMRMLStreamingVolumeNode()
       self.webcam1RGB.SetName('ImageRGB_ImageRGB')
       self.webcam1RGB.SetSpacing(imageSpacing)
+      self.webcam1RGB.SetDefaultSequenceStorageNodeClassName("vtkMRMLStreamingVolumeSequenceStorageNode")
       self.webcam1RGB.SetImageDataConnection(thresholder.GetOutputPort())
       # Add volume to scene
       slicer.mrmlScene.AddNode(self.webcam1RGB)
@@ -530,6 +620,7 @@ class NephrostomyTutorGuidelet(Guidelet):
       self.webcam1DEPTH = slicer.vtkMRMLStreamingVolumeNode()
       self.webcam1DEPTH.SetName('ImageDEPTH_ImageDEPT')
       self.webcam1DEPTH.SetSpacing(imageSpacing)
+      self.webcam1DEPTH.SetDefaultSequenceStorageNodeClassName("vtkMRMLStreamingVolumeSequenceStorageNode")
       self.webcam1DEPTH.SetImageDataConnection(thresholder.GetOutputPort())
       # Add volume to scene
       slicer.mrmlScene.AddNode(self.webcam1DEPTH)
@@ -554,6 +645,7 @@ class NephrostomyTutorGuidelet(Guidelet):
       self.webcam0RGB = slicer.vtkMRMLStreamingVolumeNode()
       self.webcam0RGB.SetName('Image1RGB_Image1RGB')
       self.webcam0RGB.SetSpacing(imageSpacing)
+      self.webcam0RGB.SetDefaultSequenceStorageNodeClassName("vtkMRMLStreamingVolumeSequenceStorageNode")
       self.webcam0RGB.SetImageDataConnection(thresholder.GetOutputPort())
       # Add volume to scene
       slicer.mrmlScene.AddNode(self.webcam0RGB)
@@ -578,6 +670,7 @@ class NephrostomyTutorGuidelet(Guidelet):
       self.webcam0DEPTH = slicer.vtkMRMLStreamingVolumeNode()
       self.webcam0DEPTH.SetName('Image1DEPTH_Image1DE')
       self.webcam0DEPTH.SetSpacing(imageSpacing)
+      self.webcam0DEPTH.SetDefaultSequenceStorageNodeClassName("vtkMRMLStreamingVolumeSequenceStorageNode")
       self.webcam0DEPTH.SetImageDataConnection(thresholder.GetOutputPort())
       # Add volume to scene
       slicer.mrmlScene.AddNode(self.webcam0DEPTH)
@@ -602,14 +695,18 @@ class NephrostomyTutorGuidelet(Guidelet):
     firstCameraNode = camerasLogic.GetViewActiveCameraNode(self.firstViewNode)
     camera = firstCameraNode.GetCamera()
 
-    camera.SetPosition(0.0, 800, 1400.0)  # 120 cm behind and 10 cm below neck
-    camera.SetFocalPoint(0.0, 0.0, 0.0)
-    camera.SetViewUp(0.0, 0.0, 1.0)  # Head up, looking towards A
-    camera.SetRoll(0)  # Default in Slicer
+    camera.SetPosition(-286.91857456732333, 791.4368210575828, -564.732276750377)  # 120 cm behind and 10 cm below neck
+    camera.SetFocalPoint(-86.65552747726097, 4.894590516478942, 22.479432668324883)
+    camera.SetViewUp(-0.9788599941195808, -0.13362514126992917, 0.15484648375990243)  # Head up, looking towards A
+    camera.SetRoll(102.46025138705296)  # Default in Slicer
+    
+    self.firstViewNode.SetBoxVisible(False)
 
     renderer.ResetCameraClippingRange()
     metricsDirectory = os.path.join(moduleDir, os.pardir, os.pardir, "Metrics", "metrics")
     self.setupMetrics(metricsDirectory)
+    
+    self.displayImageInSliceViewer(self.ultrasound.liveUltrasoundNode_Reference.GetID(), "Red", False, 0)
 
   def setupTopPanel(self):
     buttonMinWidth = 48
@@ -647,6 +744,15 @@ class NephrostomyTutorGuidelet(Guidelet):
     self.settingsWidget.setWindowIcon(qt.QIcon(settingsIconPath))
     self.settingsPopupGeometry = qt.QRect()
 
+    self.createUserWidget = qt.QDialog(mainWindow)
+    self.createUserWidget.setStyleSheet("background-color:white")
+    # self.settingsWidget.setWindowFlags(qt.Qt.WindowStaysOnTopHint)
+    self.createUserWidget.setModal(True)
+    self.createUserFrame = qt.QFrame(self.createUserWidget)
+    self.createUserFrame.setFrameStyle(0x0006)
+    self.createUserWidget.setWindowTitle('Create new user')
+    self.createUserPopupGeometry = qt.QRect()
+
     if mainWindow:
       mainWindowGeometry = mainWindow.geometry
       self.windowWidth = mainWindow.width * 0.35
@@ -657,6 +763,12 @@ class NephrostomyTutorGuidelet(Guidelet):
       self.settingsWidget.setGeometry(self.settingsPopupGeometry)
       self.settingsFrame.setGeometry(self.settingsPopupGeometry)
       self.settingsWidget.move(mainWindow.width/2.0 - self.windowWidth,mainWindow.height/2 - self.windowHeight)
+
+      self.createUserPopupGeometry.setWidth(self.windowWidth)
+      self.createUserPopupGeometry.setHeight(self.windowHeight)
+      self.createUserWidget.setGeometry(self.createUserPopupGeometry)
+      self.createUserFrame.setGeometry(self.createUserPopupGeometry)
+      self.createUserWidget.move(mainWindow.width / 2.0 - self.windowWidth, mainWindow.height / 2 - self.windowHeight)
 
     self.logoutButton = qt.QPushButton()
     self.logoutButton.connect('clicked()',self.onLogoutButtonClicked)
@@ -696,11 +808,11 @@ class NephrostomyTutorGuidelet(Guidelet):
     self.sliceletDockWidget.setWindowTitle('Nephrostomy Tutor')
     node = self.logic.getParameterNode()
     self.sliceletDockWidget.setWidget(self.loginPanel)
-    self.userIDLineEdit.setText('User ID')
     moduleDir = os.path.dirname(slicer.modules.nephrostomytutor.path)
-    sceneSaveDirectory = os.path.join(moduleDir, 'SavedScenes')
+    sceneSaveDirectory = self.logic.getParameterNode.GetParameter('SavedScenesDirectory')
     self.logic.updateSettings({'SavedScenesDirectory': sceneSaveDirectory}, self.configurationName)
     self.logic.updateParameterNodeFromUserPreferences(node, {'SavedScenesDirectory': sceneSaveDirectory})
+    self.emailAddressLineEdit.setText("Email Address")
 
   def onLoadButtonClicked(self):
     io = slicer.app.ioManager()
@@ -726,6 +838,9 @@ class NephrostomyTutorGuidelet(Guidelet):
       view = self.VIEW_TRIPLE_3D
     self.selectView(view)
 
+  def setupCreateUserConnections(self):
+    self.submitUserButton.connect('clicked(bool)', self.onSubmitUserClicked)
+
   def setupSettingsConnections(self):
     self.newTrainingSessionButton.connect('clicked(bool)', self.onNewTrainingSession)
     self.showFullSlicerInterfaceButton.connect('clicked()', self.onShowFullSlicerInterfaceClicked)
@@ -738,6 +853,43 @@ class NephrostomyTutorGuidelet(Guidelet):
 
   def onCloseSettingsClicked(self):
     self.settingsWidget.hide()
+
+  def onSubmitUserClicked(self):
+    if self.enterFirstNameLineEdit.text != "First Name" and len(self.enterFirstNameLineEdit.text) >1 and\
+      self.enterLastNameLineEdit.text != "Last Name" and len(self.enterLastNameLineEdit.text) > 1 and\
+      self.enterEmailAddressLineEdit.text != "Email Address" and len(self.enterEmailAddressLineEdit.text) >1 and "@" in self.enterEmailAddressLineEdit.text and\
+      ((self.educationComboBox.currentText == "Attending" and self.enterSpecialtyLineEdit.text!="Specialty") or (self.educationComboBox.currentText!="Enter Education Level")):
+        email_address, servername = self.enterEmailAddressLineEdit.text.split("@")
+        email_address = email_address.lower() + "@" + servername.lower()
+        self.userEntry = self.userDataBase.loc[self.userDataBase["email_address"] == email_address]
+        if not self.userEntry.empty:
+          self.missingInfoLabel.setText("A user with this information already exists")
+        else:
+          userSpecialty = self.enterSpecialtyLineEdit.text.lower()
+          userSpecialtyID = userSpecialty[0:2].upper()
+          numTypeOfUser = self.userDataBase.loc[self.userDataBase["specialty_key"]==userSpecialtyID]
+          if numTypeOfUser.empty:
+            self.userID = "{}01".format(userSpecialtyID)
+          else:
+            self.userID = userSpecialtyID+str(len(numTypeOfUser.index)+1).zfill(2)
+          self.userDataBase = self.userDataBase.append({'ID':self.userID,
+                                                                                 'First_name':self.enterFirstNameLineEdit.text.lower(),
+                                                                                 'Last_name':self.enterLastNameLineEdit.text.lower(),
+                                                                                 'email_address':self.enterEmailAddressLineEdit.text,
+                                                                                 'specialty':self.enterSpecialtyLineEdit.text.lower(),
+                                                                                 'specialty_key':userSpecialtyID,
+                                                                                 'education':self.educationComboBox.currentText.lower()},ignore_index=True)
+          self.userDataBase.to_csv(os.path.join(self.moduleDir,"Resources/NephrostomyUserDatabase.csv"),index=False)
+          self.missingInfoLabel.setText("")
+          self.createUserWidget.hide()
+          self.emailAddressLineEdit.setText(self.enterEmailAddressLineEdit.text)
+          self.onLoginClicked()
+          self.enterFirstNameLineEdit.setText("First Name")
+          self.enterLastNameLineEdit.setText("Last Name")
+          self.enterEmailAddressLineEdit.setText("Email Address")
+          self.educationComboBox.setCurrentText("Select Education Level")
+    else:
+      self.missingInfoLabel.setText("Please fill out all questions")
 
 
   def onOpenSettingsClicked(self):
@@ -853,6 +1005,7 @@ class NephrostomyTutorGuidelet(Guidelet):
       thresholder.SetOutValue(0)
       # Create volume node
       self.webcam1RGB = slicer.vtkMRMLStreamingVolumeNode()
+      self.webcam1RGB.SetDefaultSequenceStorageNodeClassName("vtkMRMLStreamingVolumeSequenceStorageNode")
       self.webcam1RGB.SetName('ImageRGB_ImageRGB')
       self.webcam1RGB.SetSpacing(imageSpacing)
       self.webcam1RGB.SetImageDataConnection(thresholder.GetOutputPort())
@@ -877,6 +1030,7 @@ class NephrostomyTutorGuidelet(Guidelet):
       thresholder.SetOutValue(0)
       # Create volume node
       self.webcam1DEPTH = slicer.vtkMRMLStreamingVolumeNode()
+      self.webcam1DEPTH.SetDefaultSequenceStorageNodeClassName("vtkMRMLStreamingVolumeSequenceStorageNode")
       self.webcam1DEPTH.SetName('ImageDEPTH_ImageDEPT')
       self.webcam1DEPTH.SetSpacing(imageSpacing)
       self.webcam1DEPTH.SetImageDataConnection(thresholder.GetOutputPort())
@@ -904,6 +1058,7 @@ class NephrostomyTutorGuidelet(Guidelet):
       thresholder.SetOutValue(0)
       # Create volume node
       self.webcam0RGB = slicer.vtkMRMLStreamingVolumeNode()
+      self.webcam0RGB.SetDefaultSequenceStorageNodeClassName("vtkMRMLStreamingVolumeSequenceStorageNode")
       self.webcam0RGB.SetName('Image1RGB_Image1RGB')
       self.webcam0RGB.SetSpacing(imageSpacing)
       self.webcam0RGB.SetImageDataConnection(thresholder.GetOutputPort())
@@ -931,6 +1086,7 @@ class NephrostomyTutorGuidelet(Guidelet):
       thresholder.SetOutValue(0)
       # Create volume node
       self.webcam0DEPTH = slicer.vtkMRMLStreamingVolumeNode()
+      self.webcam0DEPTH.SetDefaultSequenceStorageNodeClassName("vtkMRMLStreamingVolumeSequenceStorageNode")
       self.webcam0DEPTH.SetName('Image1DEPTH_Image1DE')
       self.webcam0DEPTH.SetSpacing(imageSpacing)
       self.webcam0DEPTH.SetImageDataConnection(thresholder.GetOutputPort())
@@ -994,15 +1150,6 @@ class NephrostomyTutorGuidelet(Guidelet):
         self.deleteAllFiducialsButton.setEnabled(False)
         self.deleteLastFiducialDuringNavigationButton.setEnabled(False)
 
-  def onDeleteAllFiducialsClicked(self):
-    self.patientSLandmarks_Reference.RemoveAllMarkups()
-    self.deleteLastFiducialButton.setEnabled(False)
-    self.deleteAllFiducialsButton.setEnabled(False)
-    self.deleteLastFiducialDuringNavigationButton.setEnabled(False)
-    sphereSource = vtk.vtkSphereSource()
-    sphereSource.SetRadius(0.001)
-    self.tumorModel_Needle.SetPolyDataConnection(sphereSource.GetOutputPort())
-    self.tumorModel_Needle.Modified()
 
   def addRecordingsTableToUltrasoundPanel(self):
     self.StartRecordingSeekWidget = slicer.qMRMLSequenceBrowserSeekWidget()
@@ -1072,19 +1219,24 @@ class NephrostomyTutorGuidelet(Guidelet):
     if ( not os.path.exists(savedScenesDirectory) ):
       os.makedirs(savedScenesDirectory) # Make the directory if it doesn't already exist
 
-    logFilename = self.fileName + os.extsep + "csv"
+    '''logFilename = self.fileName + os.extsep + "csv"
     logFilename = os.path.join(savedScenesDirectory, logFilename)
-    self.eventLog.to_csv(logFilename)
+    self.eventLog.to_csv(logFilename)'''
 
     recordingCollection = slicer.mrmlScene.GetNodesByClass( "vtkMRMLSequenceBrowserNode" )
-    for nodeNumber in range( recordingCollection.GetNumberOfItems() ):
+    print(self.fileName)
+    filename = self.fileName + ".mrb"
+    filename = os.path.join( savedScenesDirectory, filename )
+    slicer.util.saveScene(os.path.join(savedScenesDirectory,self.fileName+".mrb"))
+    print("This is where it's saving: {}".format(filename))
+    '''for nodeNumber in range( recordingCollection.GetNumberOfItems() ):
       browserNode = recordingCollection.GetItemAsObject( nodeNumber )
-      filename = self.fileName + os.extsep + "sqbr"
-      filename = os.path.join( savedScenesDirectory, filename )
-      slicer.util.saveNode(browserNode, filename)
-      #miLogic.WriteSequenceMetafile( filename, browserNode )
+      
+      slicer.util.saveNode(browserNode, filename)'''
+    #miLogic.WriteSequenceMetafile( filename, browserNode )
 
   def displayImageInSliceViewer(self, imageNodeID, sliceName, flip, rotate):
+    logging.info("displayImageInSliceViewer")
     # First, find the volume reslice driver logic
     sliceWidget = slicer.app.layoutManager().sliceWidget(sliceName)
     if (sliceWidget is None):
@@ -1103,7 +1255,7 @@ class NephrostomyTutorGuidelet(Guidelet):
     sliceLogic.GetSliceCompositeNode().SetBackgroundVolumeID(imageNodeID)
 
     sliceNode.SetSliceResolutionMode(slicer.vtkMRMLSliceNode.SliceResolutionMatchVolumes)
-
+    print('here') 
     vrdLogic.SetDriverForSlice(imageNodeID, sliceNode)
     vrdLogic.SetModeForSlice(slicer.vtkSlicerVolumeResliceDriverLogic.MODE_TRANSVERSE, sliceNode)
     vrdLogic.SetFlipForSlice(flip, sliceNode)
@@ -1338,6 +1490,8 @@ class NephrostomyTutorGuidelet(Guidelet):
     self.currentStepLabel.visible = True
     self.procedureProgressLabel.visible = True
     self.procedureProgressArea.visible = True
+    self.calyxModel.GetDisplayNode().SetSliceIntersectionVisibility(True)
+    self.calyxModel.GetDisplayNode().VisibilityOn()
 
 
   def onIntermediateSelected(self):
@@ -1349,6 +1503,8 @@ class NephrostomyTutorGuidelet(Guidelet):
     self.currentStepLabel.visible = False
     self.procedureProgressLabel.visible = False
     self.procedureProgressArea.visible = True
+    self.calyxModel.GetDisplayNode().SetSliceIntersectionVisibility(False)
+    self.calyxModel.GetDisplayNode().VisibilityOff()
 
   def onAdvancedSelected(self):
     self.navigationView = self.VIEW_ULTRASOUND
@@ -1359,6 +1515,8 @@ class NephrostomyTutorGuidelet(Guidelet):
     self.currentStepLabel.visible = False
     self.procedureProgressLabel.visible = False
     self.procedureProgressArea.visible = False
+    self.calyxModel.GetDisplayNode().SetSliceIntersectionVisibility(False)
+    self.calyxModel.GetDisplayNode().VisibilityOff()
 
   
   def onNewTrainingSession(self):
@@ -1582,7 +1740,7 @@ class NephrostomyTutorGuidelet(Guidelet):
   def onRecordingNodeSelected(self):
     selectedNode = self.recordingComboBox.currentNode()
     self.stopSequenceBrowserPlayback()
-    self.setPlaybackRealtime(selectedNode)
+    #self.setPlaybackRealtime(selectedNode)
     self.recordingPlayWidget.setMRMLSequenceBrowserNode(selectedNode)
     self.recordingSeekWidget.setMRMLSequenceBrowserNode(selectedNode)
     self.setActiveVolumeFromSelection()
@@ -1670,25 +1828,25 @@ class NephrostomyTutorGuidelet(Guidelet):
         self.perkEvaluatorNode.RemoveMetricInstanceID(node.GetID())
 
     # Generic needle-plane distance/angle computation
-    __, needlePlaneDistanceAngleScript = slicer.util.loadNodeFromFile(
+    needlePlaneDistanceAngleScript = slicer.util.loadNodeFromFile(
       os.path.join(metricsDirectory, "NeedlePlaneDistanceAngle.py"), "Python Metric Script", {}, True)
 
     # Generic in-action computation
-    __, inActionScript = slicer.util.loadNodeFromFile(os.path.join(metricsDirectory, "InAction.py"),
+    inActionScript = slicer.util.loadNodeFromFile(os.path.join(metricsDirectory, "InAction.py"),
                                                       "Python Metric Script", {}, True)
 
     # Max/average needle-tip to ultrasound plane distance/angle
-    __, maximumNeedlePlaneDistanceScript = slicer.util.loadNodeFromFile(
+    maximumNeedlePlaneDistanceScript = slicer.util.loadNodeFromFile(
       os.path.join(metricsDirectory, "MaximumNeedlePlaneDistance.py"), "Python Metric Script", {}, True)
-    __, averageNeedlePlaneDistanceScript = slicer.util.loadNodeFromFile(
+    averageNeedlePlaneDistanceScript = slicer.util.loadNodeFromFile(
       os.path.join(metricsDirectory, "AverageNeedlePlaneDistance.py"), "Python Metric Script", {}, True)
-    __, maximumNeedlePlaneAngleScript = slicer.util.loadNodeFromFile(
+    maximumNeedlePlaneAngleScript = slicer.util.loadNodeFromFile(
       os.path.join(metricsDirectory, "MaximumNeedlePlaneAngle.py"), "Python Metric Script", {}, True)
-    __, averageNeedlePlaneAngleScript = slicer.util.loadNodeFromFile(
+    averageNeedlePlaneAngleScript = slicer.util.loadNodeFromFile(
       os.path.join(metricsDirectory, "AverageNeedlePlaneAngle.py"), "Python Metric Script", {}, True)
 
     # Distance to target
-    __, distanceFromTargetScript = slicer.util.loadNodeFromFile(os.path.join(metricsDirectory, "DistanceFromTarget.py"),
+    distanceFromTargetScript = slicer.util.loadNodeFromFile(os.path.join(metricsDirectory, "DistanceFromTarget.py"),
                                                                 "Python Metric Script", {}, True)
 
     # Everything should be OK with the same roles
@@ -1751,7 +1909,7 @@ class NephrostomyTutorGuidelet(Guidelet):
     for i in range( sequenceBrowserNodes.GetNumberOfItems() ):
       currSequenceBrowserNode = sequenceBrowserNodes.GetItemAsObject( i )
       currSequenceBrowserNode.SetPlaybackActive(False)
-      self.setPlaybackRealtime(currSequenceBrowserNode)
+      #self.setPlaybackRealtime(currSequenceBrowserNode)
 
   def onResultsPanelToggled(self, toggled):
     logging.debug('onResultsPanelToggled: {0}'.format(toggled))
@@ -1865,7 +2023,7 @@ class NephrostomyTutorGuidelet(Guidelet):
           usMarkersProperties[ "Actors" ][ dotIndex ] = actor2D
 
         # Find the location in the XY frame
-        dotPosition_IJK = [ 0, dotIndex * DOT_SPACING / scale, 0 ]
+        dotPosition_IJK = [ volumeDimensions[ 0], dotIndex * DOT_SPACING / scale, 0 ]
         dotPosition_XY = [ 0, 0, 0 ]
         ijkToXYTransform.TransformPoint( dotPosition_IJK, dotPosition_XY )
 
@@ -1938,7 +2096,7 @@ class NephrostomyTutorGuidelet(Guidelet):
 
             originalProxyNodeName = value.GetName()
 
-            sequenceBrowserLogic = slicer.modules.sequencebrowser.logic()
+            sequenceBrowserLogic = slicer.modules.sequences.logic()
             sequenceBrowserLogic.AddSynchronizedNode( sequenceNode, value, browserNode ) #Re-add the sequence with the correct virtual node
             browserNode.SetOverwriteProxyName( sequenceNode, False ) # Must set this after re-adding the sequence node (the setting is dropped when the sequence node is removed)
 
@@ -1976,6 +2134,9 @@ class NephrostomyTutorGuidelet(Guidelet):
     redSliceNode.SetSliceResolutionMode( slicer.vtkMRMLSliceNode.SliceFOVMatchVolumesSpacingMatch2DView ) # This works when the image is scaled by a transform (the previous does not)
     if ( redSliceNode is not None ):
       vrdLogic.SetDriverForSlice( activeVolumeID, redSliceNode )
+      vrdLogic.SetFlipForSlice(True, redSliceNode)
+      print('here') 
+      
 
     self.setupWebcamResliceDriver()
 
@@ -2019,13 +2180,14 @@ class NephrostomyTutorGuidelet(Guidelet):
     if (browserNode is None):
       return
   
+    
     # Indicate that this node was recorded, not loaded from file
     browserNode.SetName( slicer.mrmlScene.GetUniqueNameByString( "Recording" ) )
     browserNode.SetAttribute( "Recorded", "True" )
     # Create and populate a sequence browser node if the recording started
     browserNode.SetScene(slicer.mrmlScene)
     slicer.mrmlScene.AddNode(browserNode)
-    sequenceBrowserLogic = slicer.modules.sequencebrowser.logic()
+    sequenceBrowserLogic = slicer.modules.sequences.logic()
 
     modifiedFlag = browserNode.StartModify()
     sequenceBrowserLogic.AddSynchronizedNode(None, self.needleToReference, browserNode)
@@ -2046,8 +2208,11 @@ class NephrostomyTutorGuidelet(Guidelet):
     print (self.recordingStartTime) #start looking for steps to be completed
 
     browserNode.SetRecordingActive(True)
+    
+    self.setupScene()
 
     self.StartRecordingSeekWidget.setMRMLSequenceBrowserNode(browserNode)
+    
 
   def stopSequenceBrowserRecording(self, browserNode):
     if (browserNode is None):
@@ -2055,8 +2220,8 @@ class NephrostomyTutorGuidelet(Guidelet):
 
     browserNode.SetRecordingActive(False)
     browserNode.SetRecording( None, False )
-    self.setPlaybackRealtime(browserNode)
-    self.fileName = self.userIDLineEdit.text + "-" + time.strftime("%Y%m%d-%H%M%S")
+    #self.setPlaybackRealtime(browserNode)
+    self.fileName = self.userID + "-" + time.strftime("%Y%m%d-%H%M%S")
     self.saveAllRecordings()
 
   def onStartStopRecordingClicked(self):
