@@ -68,7 +68,7 @@ class NephrostomyTutorLogic(GuideletLogic):
                    'TestMode' : 'False',
                    'RecordingFilenamePrefix' : 'NephrostomyTutorRec-',
                    'UltraSoundBrightnessControl' : 'Slider',
-                   #'SavedScenesDirectory': os.path.join( moduleDir, 'SavedScenes' ),
+                   'SavedScenesDirectory': "C:\\Users\\perkl\\OneDrive - Queen's University\\NephrostomyData\\SavedScenes",
                    'ProcedureLayout': Guidelet.VIEW_ULTRASOUND_CAM_3D,
                    'ResultsLayout': Guidelet.VIEW_ULTRASOUND_CAM_3D, #overwrites the default setting param of base
                    'PlusWebcamServerHostNamePort': 'localhost:18945',
@@ -82,7 +82,7 @@ class NephrostomyTutorLogic(GuideletLogic):
     self.updateUserPreferencesFromSettings( settingsList, 'Default' ) # Copy values from the default configuration
     moduleDir = os.path.dirname(slicer.modules.nephrostomytutor.path)
 
-    #settingsList[ 'SavedScenesDirectory' ] = os.path.join( moduleDir, 'SavedScenes' )
+    settingsList[ 'SavedScenesDirectory' ] = "C:\\Users\\perkl\\OneDrive - Queen's University\\NephrostomyData\\SavedScenes"
     settingsList[ 'DisplayNeedleModel' ] = 'False'
     settingsList[ 'ProcedureLayout' ] = Guidelet.VIEW_ULTRASOUND
     settingsList[ 'ResultsLayout' ] = Guidelet.VIEW_ULTRASOUND_3D
@@ -96,7 +96,7 @@ class NephrostomyTutorLogic(GuideletLogic):
     self.updateUserPreferencesFromSettings(settingsList, 'Default')  # Copy values from the default configuration
     moduleDir = os.path.dirname(slicer.modules.nephrostomytutor.path)
 
-    #settingsList['SavedScenesDirectory'] = os.path.join(moduleDir, 'SavedScenes')
+    settingsList['SavedScenesDirectory'] = "C:\\Users\\perkl\\OneDrive - Queen's University\\NephrostomyData\\SavedScenes"
     settingsList[ 'ProcedureLayout' ] = Guidelet.VIEW_ULTRASOUND_CAM_3D
     settingsList[ 'ResultsLayout' ] = Guidelet.VIEW_ULTRASOUND_3D
     settingsList['UltrasoundBrightnessControl'] = 'Buttons'
@@ -109,7 +109,7 @@ class NephrostomyTutorLogic(GuideletLogic):
     self.updateUserPreferencesFromSettings(settingsList, 'Default')  # Copy values from the default configuration
     moduleDir = os.path.dirname(slicer.modules.nephrostomytutor.path)
 
-    #settingsList['SavedScenesDirectory'] = os.path.join(moduleDir, 'SavedScenes')
+    settingsList['SavedScenesDirectory'] = "C:\\Users\\perkl\\OneDrive - Queen's University\\NephrostomyData\\SavedScenes"
     settingsList[ 'ProcedureLayout' ] = Guidelet.VIEW_ULTRASOUND_CAM_3D
     settingsList[ 'ResultsLayout' ] = Guidelet.VIEW_ULTRASOUND_3D
     settingsList['UltrasoundBrightnessControl'] = 'Dual'
@@ -207,9 +207,9 @@ class NephrostomyTutorGuidelet(Guidelet):
     self.ultrasoundCollapsibleButton.setProperty('collapsed', False)
     self.ultrasoundCollapsibleButton.text = "Procedure"
     moduleDir = os.path.dirname(slicer.modules.nephrostomytutor.path)
-    sceneSaveDirectory = self.logic.getParameterNode().GetParameter('SavedScenesDirectory')
+    #sceneSaveDirectory = self.logic.getParameterNode().GetParameter('SavedScenesDirectory')
     #userSettings = slicer.app.userSettings()
-    #sceneSaveDirectory = userSettings.value('SavedScenesDirectory')
+    sceneSaveDirectory = "C:\\Users\\perkl\\OneDrive - Queen's University\\NephrostomyData\\SavedScenes"
     self.logic.updateSettings({'SavedScenesDirectory': sceneSaveDirectory}, self.configurationName)
     node = self.logic.getParameterNode()
     self.logic.updateParameterNodeFromUserPreferences(node, {'SavedScenesDirectory': sceneSaveDirectory})
@@ -309,7 +309,7 @@ class NephrostomyTutorGuidelet(Guidelet):
   def onLoginClicked(self):
 
     node = self.logic.getParameterNode()
-    sceneSaveDirectory = node.GetParameter('SavedScenesDirectory')
+    sceneSaveDirectory = "C:\\Users\\perkl\\OneDrive - Queen's University\\NephrostomyData\\SavedScenes"
     moduleDir = os.path.dirname(slicer.modules.nephrostomytutor.path)
 
     #sceneSaveDirectory = os.path.join(moduleDir, 'SavedScenes')
@@ -327,7 +327,7 @@ class NephrostomyTutorGuidelet(Guidelet):
       self.userFoundLabel.setText(
         "No user found by email: {}".format(self.emailAddressLineEdit.text))
       moduleDir = os.path.dirname(slicer.modules.nephrostomytutor.path)
-      sceneSaveDirectory = self.logic.getParameterNode.GetParameter('SavedScenesDirectory')
+      sceneSaveDirectory = "C:\\Users\\perkl\\OneDrive - Queen's University\\NephrostomyData\\SavedScenes"
       self.logic.updateSettings({'SavedScenesDirectory': sceneSaveDirectory}, self.configurationName)
       self.logic.updateParameterNodeFromUserPreferences(node, {'SavedScenesDirectory': sceneSaveDirectory})
 
@@ -504,8 +504,8 @@ class NephrostomyTutorGuidelet(Guidelet):
       self.calyxModel = slicer.util.getNode('Calyx')
     except slicer.util.MRMLNodeNotFoundException:
     #if not self.usProbeModel:
-      #modelFilePath = os.path.join(moduleDir, 'Resources', 'Segmentation_Left_Calyx_LG.stl')
-      modelFilePath = os.path.join(moduleDir, 'Resources', 'Calyces.stl')
+      modelFilePath = os.path.join(moduleDir, 'Resources', 'Segmentation_Left_Calyx_LG.stl')
+      #modelFilePath = os.path.join(moduleDir, 'Resources', 'Calyces.stl')
       self.calyxModel = slicer.util.loadModel(modelFilePath)
       self.calyxModel.SetName('Calyx')
 

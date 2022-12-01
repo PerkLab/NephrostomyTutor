@@ -104,7 +104,6 @@
       <TransformNames>
         <Transform Name="ProbeToReference" />
         <Transform Name="NeedleToReference" />
-        <Transform Name="ImageToProbe" />
       </TransformNames>
       <ImageNames>
         <Image Name="Image" EmbeddedTransformToFrame="Image" />
@@ -118,11 +117,12 @@
     <Transform From="Image" To="Probe"
       Matrix="
 		-0.00185924 -0.176288 -0.00697099 177.805 
-		-0.0366905 0.00710989 -0.174772 40.9667 
-		0.177069 -0.000377792 -0.0362878 -29.318 
-		0 0 0 1 
+-0.0366905 0.00710989 -0.174772 37.9667 
+0.177069 -0.000377792 -0.0362878 -32.318 
+0 0 0 1 
+ 
          "
-       Date="2015.10.27 14:06:18" /> 
+       Date="2015.10.27 14:06:18" />
 	   
 
   </CoordinateDefinitions> 
