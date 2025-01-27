@@ -872,13 +872,13 @@ class NephrostomyTutorGuidelet(Guidelet):
             self.userID = "{}01".format(userSpecialtyID)
           else:
             self.userID = userSpecialtyID+str(len(numTypeOfUser.index)+1).zfill(2)
-          self.userDataBase = self.userDataBase.append({'ID':self.userID,
-                                                                                 'First_name':self.enterFirstNameLineEdit.text.lower(),
-                                                                                 'Last_name':self.enterLastNameLineEdit.text.lower(),
-                                                                                 'email_address':self.enterEmailAddressLineEdit.text,
-                                                                                 'specialty':self.enterSpecialtyLineEdit.text.lower(),
-                                                                                 'specialty_key':userSpecialtyID,
-                                                                                 'education':self.educationComboBox.currentText.lower()},ignore_index=True)
+          self.userDataBase = pandas.concat([self.userDataBase,pandas.DataFrame({'ID':[self.userID],
+                                                                                 'First_name':[self.enterFirstNameLineEdit.text.lower()],
+                                                                                 'Last_name':[self.enterLastNameLineEdit.text.lower()],
+                                                                                 'email_address':[self.enterEmailAddressLineEdit.text],
+                                                                                 'specialty':[self.enterSpecialtyLineEdit.text.lower()],
+                                                                                 'specialty_key':[userSpecialtyID],
+                                                                                 'education':[self.educationComboBox.currentText.lower()]})],ignore_index=True)
           self.userDataBase.to_csv(os.path.join(self.moduleDir,"Resources/NephrostomyUserDatabase.csv"),index=False)
           self.missingInfoLabel.setText("")
           self.createUserWidget.hide()
