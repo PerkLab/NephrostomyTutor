@@ -2268,11 +2268,12 @@ class NephrostomyTutorGuidelet(Guidelet):
     if self.ultrasound.startStopRecordingButton.isChecked():
       self.recordingStartTime = vtk.vtkTimerLog.GetUniversalTime()
       self.needleTutorSequenceBrowserNode = slicer.vtkMRMLSequenceBrowserNode()
-      self.startSequenceBrowserRecording(self.needleTutorSequenceBrowserNode)
+      #self.startSequenceBrowserRecording(self.needleTutorSequenceBrowserNode)
       self.livePredictionLogic.startNeuralNetwork(self.unet_config)
     else:
-      self.stopSequenceBrowserRecording(self.needleTutorSequenceBrowserNode)
+      #self.stopSequenceBrowserRecording(self.needleTutorSequenceBrowserNode)
       self.livePredictionLogic.stopNeuralNetwork()
+      self.initializePredictionNode()
 
 
 
