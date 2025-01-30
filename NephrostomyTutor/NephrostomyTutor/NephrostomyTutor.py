@@ -145,6 +145,7 @@ class NephrostomyTutorGuidelet(Guidelet):
 
   def __init__(self, parent, logic, configurationName='Default'):
     self.resultsCollapsibleButton = None
+    self.livePredictionLogic = None
 
     moduleDirectoryPath = slicer.modules.nephrostomytutor.path.replace('NephrostomyTutor.py', '')
     self.moduleDir = moduleDirectoryPath
@@ -705,8 +706,45 @@ class NephrostomyTutorGuidelet(Guidelet):
     renderer.ResetCameraClippingRange()
     metricsDirectory = os.path.join(moduleDir, os.pardir, os.pardir, "Metrics", "metrics")
     self.setupMetrics(metricsDirectory)
+    self.setupUNetSegmentationConfiguration()
     
     self.displayImageInSliceViewer(self.ultrasound.liveUltrasoundNode_Reference.GetID(), "Red", False, 0)
+
+
+
+  def setupUNetSegmentationConfiguration(self):
+    moduleDir = os.path.dirname(slicer.modules.nephrostomytutor.path)
+    if self.livePredictionLogic is None:
+      self.livePredictionLogic = slicer.modules.liveaiprediction.widgetRepresentation().self().logic
+    modelDir = os.path.join(moduleDir, "Resources\\Models")
+    modelName = "Kidney_Unet"
+    run_name = "models"
+    self.livePredictionLogic.setNetworkPath(os.path.join(modelDir, modelName, run_name))
+    configuration_filename = os.path.join(modelDir,modelName,"nephrostomy_unet_config.json")
+    self.unet_config = self.livePredictionLogic.loadConfigurationFromFile(configuration_filename)
+    self.predictionNode = slicer.util.getNode('Prediction')
+    self.predictionNode.SetAndObserveTransformNodeID(self.imageToProbe.GetID())
+    pred_display_node = self.predictionNode.GetDisplayNode()
+    if pred_display_node is None:
+      self.predictionNode.CreateDefaultDisplayNodes()
+      pred_display_node = self.predictionNode.GetDisplayNode()
+    pred_display_node.SetAndObserveColorNodeID('vtkMRMLColorTableNodeYellow')
+    self.initializePredictionNode()
+
+  def initializePredictionNode(self):
+    usImageData = self.image_reference.GetImageData()
+    imageSpacing = usImageData.GetSpacing()
+    imageData = vtk.vtkImageData()
+    dims = usImageData.GetDimensions()
+    imageData.SetDimensions(dims[0],dims[1],dims[2])
+    imageData.AllocateScalars(vtk.VTK_UNSIGNED_CHAR, 1)
+    thresholder = vtk.vtkImageThreshold()
+    thresholder.SetInputData(imageData)
+    thresholder.SetInValue(0)
+    thresholder.SetOutValue(0)
+    # Create volume node
+    self.predictionNode.SetSpacing(imageSpacing)
+    self.predictionNode.SetImageDataConnection(thresholder.GetOutputPort())
 
   def setupTopPanel(self):
     buttonMinWidth = 48
@@ -1253,15 +1291,17 @@ class NephrostomyTutorGuidelet(Guidelet):
       return
 
     sliceLogic.GetSliceCompositeNode().SetBackgroundVolumeID(imageNodeID)
+    sliceLogic.GetSliceCompositeNode().SetForegroundVolumeID(self.predictionNode.GetID())
+    sliceLogic.GetSliceCompositeNode().SetForegroundOpacity(0.3)
 
     sliceNode.SetSliceResolutionMode(slicer.vtkMRMLSliceNode.SliceResolutionMatchVolumes)
-    print('here') 
     vrdLogic.SetDriverForSlice(imageNodeID, sliceNode)
     vrdLogic.SetModeForSlice(slicer.vtkSlicerVolumeResliceDriverLogic.MODE_TRANSVERSE, sliceNode)
     vrdLogic.SetFlipForSlice(flip, sliceNode)
     vrdLogic.SetRotationForSlice(rotate, sliceNode)  # 180 degrees
 
     sliceLogic.FitSliceToAll()
+
 
   def addProcedureProgressToUltrasoundPanel(self):
     self.lastNeedleUpdateTimeSec = 0
@@ -2229,8 +2269,10 @@ class NephrostomyTutorGuidelet(Guidelet):
       self.recordingStartTime = vtk.vtkTimerLog.GetUniversalTime()
       self.needleTutorSequenceBrowserNode = slicer.vtkMRMLSequenceBrowserNode()
       self.startSequenceBrowserRecording(self.needleTutorSequenceBrowserNode)
+      self.livePredictionLogic.startNeuralNetwork(self.unet_config)
     else:
       self.stopSequenceBrowserRecording(self.needleTutorSequenceBrowserNode)
+      self.livePredictionLogic.stopNeuralNetwork()
 
 
 
